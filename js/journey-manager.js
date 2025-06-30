@@ -1,143 +1,137 @@
-const JourneyManager = (function() {
-    const state = {
-        jornadaId: null,
-        perguntaAtualId: null,
-        historico: [], // Armazena { perguntaId, opcaoId, trecho_prompt }
-        promptParcial: "",
-        config: null,
-        isFinished: false
-    };
+// Este módulo gerencia o estado da jornada (perguntas, histórico, etc.)
 
-    const LS_KEY_PREFIX = 'encontra_meu_cv_journey_';
+const state = {
+    journeyId: null,
+    currentQuestionId: null,
+    history: [], // [{ questionId, optionId, promptChunk }]
+    config: null,
+    isFinished: false,
+};
 
-    function getStorageKey() {
-        return state.jornadaId ? `${LS_KEY_PREFIX}${state.jornadaId}` : null;
+const LS_KEY = 'encontra_meu_cv_journey_progress';
+
+function saveProgress() {
+    if (state.journeyId) {
+        localStorage.setItem(LS_KEY, JSON.stringify(state));
     }
-    
-    function resetState() {
-        state.jornadaId = null;
-        state.perguntaAtualId = null;
-        state.historico = [];
-        state.promptParcial = "";
-        state.config = null;
-        state.isFinished = false;
-    }
+}
 
-    function saveProgress() {
-        if (state.jornadaId) {
-            Utils.saveToLocalStorage(getStorageKey(), state);
+function clearProgress() {
+    localStorage.removeItem(LS_KEY);
+}
+
+function resetState() {
+    state.journeyId = null;
+    state.currentQuestionId = null;
+    state.history = [];
+    state.config = null;
+    state.isFinished = false;
+}
+
+function buildPrompt() {
+    const chunks = state.history.map(step => step.promptChunk).filter(Boolean);
+    if (chunks.length === 0) return "";
+    return `Atue como um especialista em recrutamento e otimização de carreira. Crie um texto com base nas seguintes diretrizes: ${chunks.join('. ')}.`;
+}
+
+// O objeto JourneyManager é a interface pública do módulo.
+const JourneyManager = {
+    async start(journeyId, journeyConfig) {
+        const savedState = JSON.parse(localStorage.getItem(LS_KEY));
+        
+        // Se houver um estado salvo para a mesma jornada e ela não estiver finalizada, recupera.
+        if (savedState && savedState.journeyId === journeyId && !savedState.isFinished) {
+            Object.assign(state, savedState);
+            console.log('Jornada recuperada do localStorage.');
+            return this.getCurrentQuestion();
         }
-    }
 
-    function clearProgress() {
-        if (state.jornadaId) {
-            Utils.removeFromLocalStorage(getStorageKey());
-        }
+        // Caso contrário, inicia uma nova jornada
         resetState();
-    }
+        state.journeyId = journeyId;
+        state.config = journeyConfig;
+        state.currentQuestionId = journeyConfig.jornada.pergunta_inicial;
+        state.isFinished = false;
+        saveProgress();
+        return this.getCurrentQuestion();
+    },
 
-    function buildPrompt() {
-        const trechos = state.historico.map(passo => passo.trecho_prompt).filter(Boolean);
-        // Exemplo de construção - pode ser mais complexo
-        if (trechos.length > 0) {
-            return `Atue como um especialista em recrutamento e otimização de carreira. Crie um texto com base nas seguintes diretrizes: ${trechos.join('. ')}.`;
+    cancel() {
+        clearProgress();
+        resetState();
+    },
+
+    next(optionId) {
+        const question = this.getCurrentQuestion();
+        if (!question) return null;
+
+        const chosenOption = question.opcoes.find(o => o.id === optionId);
+        if (!chosenOption) {
+            console.error("Opção inválida:", optionId);
+            return null;
         }
-        return "";
-    }
-    
-    return {
-        async start(jornadaId, journeyConfig) {
-            const savedState = Utils.getFromLocalStorage(`${LS_KEY_PREFIX}${jornadaId}`);
-            if (savedState && !savedState.isFinished) {
-                 Object.assign(state, savedState);
-                 console.log('Jornada recuperada do localStorage.');
-                 return this.getCurrentQuestion();
-            }
-            
-            clearProgress(); // Limpa qualquer progresso anterior
-            state.jornadaId = jornadaId;
-            state.config = journeyConfig;
-            state.perguntaAtualId = journeyConfig.jornada.pergunta_inicial;
-            state.isFinished = false;
+
+        state.history.push({
+            questionId: state.currentQuestionId,
+            optionId,
+            promptChunk: chosenOption.trecho_prompt,
+        });
+
+        if (chosenOption.destino && state.config.perguntas[chosenOption.destino]) {
+            state.currentQuestionId = chosenOption.destino;
             saveProgress();
             return this.getCurrentQuestion();
-        },
-
-        cancel() {
-            const jornadaId = state.jornadaId;
-            clearProgress();
-            return jornadaId; // Retorna o ID para que a UI possa decidir o que fazer
-        },
-
-        next(opcaoId) {
-            const pergunta = this.getCurrentQuestion();
-            if (!pergunta) return null;
-
-            const opcaoEscolhida = pergunta.opcoes.find(o => o.id === opcaoId);
-            if (!opcaoEscolhida) {
-                console.error("Opção inválida:", opcaoId);
-                return null;
-            }
-
-            state.historico.push({
-                perguntaId: state.perguntaAtualId,
-                opcaoId: opcaoId,
-                trecho_prompt: opcaoEscolhida.trecho_prompt
-            });
-
-            state.promptParcial = buildPrompt();
-
-            if (opcaoEscolhida.destino && state.config.perguntas[opcaoEscolhida.destino]) {
-                state.perguntaAtualId = opcaoEscolhida.destino;
-                saveProgress();
-                return this.getCurrentQuestion();
-            } else {
-                state.isFinished = true;
-                saveProgress();
-                return this.finish();
-            }
-        },
-
-        back() {
-            if (state.historico.length === 0) {
-                return null;
-            }
-
-            const ultimoPasso = state.historico.pop();
-            state.perguntaAtualId = ultimoPasso.perguntaId;
-            state.promptParcial = buildPrompt();
-            state.isFinished = false;
-            saveProgress();
-            return this.getCurrentQuestion();
-        },
-
-        finish() {
-            const finalPrompt = buildPrompt();
-            clearProgress(); // Limpa o progresso ao finalizar
-            return {
-                isFinal: true,
-                prompt: finalPrompt,
-                historico: state.historico
-            };
-        },
-
-        getCurrentQuestion() {
-            if (!state.config || !state.perguntaAtualId) return null;
-            return state.config.perguntas[state.perguntaAtualId];
-        },
-        
-        getPromptPreview() {
-            return state.promptParcial;
-        },
-
-        getBreadcrumb() {
-            const totalEstimado = Object.keys(state.config?.perguntas || {}).length;
-            const atual = state.historico.length + 1;
-            return `Passo ${atual}`; // Sem revelar o total, como pedido.
-        },
-        
-        hasHistory() {
-            return state.historico.length > 0;
+        } else {
+            // Fim da jornada
+            state.isFinished = true;
+            saveProgress(); // Salva o estado final antes de limpar
+            return this.finish();
         }
-    };
-})();
+    },
+
+    back() {
+        if (state.history.length === 0) {
+            return null; // Não pode voltar do primeiro passo
+        }
+        const lastStep = state.history.pop();
+        state.currentQuestionId = lastStep.questionId;
+        state.isFinished = false;
+        saveProgress();
+        return this.getCurrentQuestion();
+    },
+
+    finish() {
+        const finalPrompt = buildPrompt();
+        clearProgress();
+        const finalHistory = [...state.history]; // Copia o histórico
+        resetState(); // Limpa o estado para a próxima jornada
+        return {
+            isFinal: true,
+            prompt: finalPrompt,
+            history: finalHistory,
+        };
+    },
+
+    // Getters para acessar o estado interno de forma segura
+    getCurrentQuestion() {
+        if (!state.config || !state.currentQuestionId) return null;
+        return state.config.perguntas[state.currentQuestionId];
+    },
+
+    getPromptPreview() {
+        return buildPrompt();
+    },
+
+    getBreadcrumb() {
+        if (!state.config) return "";
+        const journeyTitle = state.config.jornada.titulo;
+        const currentStep = state.history.length + 1;
+        return `${journeyTitle} - Passo ${currentStep}`;
+    },
+
+    hasHistory() {
+        return state.history.length > 0;
+    },
+};
+
+export default JourneyManager;

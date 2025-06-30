@@ -1,85 +1,81 @@
-const Utils = {
-    /**
-     * Busca um arquivo JSON de uma URL.
-     * @param {string} url - O caminho para o arquivo JSON.
-     * @returns {Promise<object>} Os dados do JSON.
-     */
-    async fetchJSON(url) {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`Erro na rede: ${response.statusText}`);
-            }
-            return await response.json();
-        } catch (error) {
-            console.error(`Falha ao buscar JSON de ${url}:`, error);
-            throw error; // Propaga o erro para ser tratado pelo chamador
+/**
+ * Busca um arquivo JSON de uma URL.
+ * @param {string} url - O caminho para o arquivo JSON.
+ * @returns {Promise<object>} Os dados do JSON.
+ */
+async function fetchJSON(url) {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Erro na rede: ${response.statusText}`);
         }
-    },
-
-    /**
-     * Salva um valor no localStorage após convertê-lo para JSON.
-     * @param {string} key - A chave para o item.
-     * @param {*} value - O valor a ser salvo.
-     */
-    saveToLocalStorage(key, value) {
-        try {
-            localStorage.setItem(key, JSON.stringify(value));
-        } catch (error) {
-            console.error(`Falha ao salvar no localStorage (chave: ${key}):`, error);
-        }
-    },
-
-    /**
-     * Obtém um valor do localStorage e o converte de JSON.
-     * @param {string} key - A chave do item.
-     * @returns {*} O valor parseado ou null se não existir ou houver erro.
-     */
-    getFromLocalStorage(key) {
-        try {
-            const item = localStorage.getItem(key);
-            return item ? JSON.parse(item) : null;
-        } catch (error) {
-            console.error(`Falha ao ler do localStorage (chave: ${key}):`, error);
-            return null;
-        }
-    },
-
-    /**
-     * Remove um item do localStorage.
-     * @param {string} key - A chave do item a ser removido.
-     */
-    removeFromLocalStorage(key) {
-        localStorage.removeItem(key);
-    },
-
-    /**
-     * Função simples para criar elementos DOM com atributos e filhos.
-     * @param {string} tag - A tag HTML do elemento.
-     * @param {object} [attributes={}] - Um objeto de atributos (ex: { class: 'btn' }).
-     * @param {(string|Node|Array<string|Node>)} [children=[]] - Texto, um nó ou um array de nós filhos.
-     * @returns {HTMLElement} O elemento criado.
-     */
-    createElement(tag, attributes = {}, children = []) {
-        const element = document.createElement(tag);
-        for (const key in attributes) {
-            element.setAttribute(key, attributes[key]);
-        }
-        
-        const appendChild = (child) => {
-            if (typeof child === 'string') {
-                element.appendChild(document.createTextNode(child));
-            } else if (child instanceof Node) {
-                element.appendChild(child);
-            }
-        };
-
-        if (Array.isArray(children)) {
-            children.forEach(appendChild);
-        } else {
-            appendChild(children);
-        }
-
-        return element;
+        return await response.json();
+    } catch (error) {
+        console.error(`Falha ao buscar JSON de ${url}:`, error);
+        throw error;
     }
-};
+}
+
+/**
+ * Função para criar elementos DOM com atributos e filhos.
+ * Mais simples, ideal para os casos de uso deste app.
+ * @param {string} htmlString - A string HTML a ser convertida em um elemento.
+ * @returns {HTMLElement} O primeiro elemento criado a partir da string.
+ */
+function createElementFromHTML(htmlString) {
+    const div = document.createElement('div');
+    div.innerHTML = htmlString.trim();
+    return div.firstChild;
+}
+
+/**
+ * Copia um texto para a área de transferência e fornece feedback visual.
+ * @param {string} text - O texto a ser copiado.
+ * @param {HTMLElement} buttonElement - O botão que acionou a cópia.
+ */
+function copyToClipboard(text, buttonElement) {
+    const originalText = buttonElement.textContent;
+    
+    // Usa a API Clipboard, com fallback para o método antigo.
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+            showFeedback('✓ Copiado!');
+        }).catch(err => {
+            console.error('Falha ao copiar com a API Clipboard: ', err);
+            fallbackCopy(text);
+        });
+    } else {
+        fallbackCopy(text);
+    }
+    
+    function showFeedback(message) {
+        buttonElement.textContent = message;
+        buttonElement.disabled = true;
+        setTimeout(() => {
+            buttonElement.textContent = originalText;
+            buttonElement.disabled = false;
+        }, 2000);
+    }
+    
+    function fallbackCopy(textToCopy) {
+        const textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showFeedback('✓ Copiado!');
+        } catch (err) {
+            console.error('Falha ao copiar com execCommand: ', err);
+            showFeedback('Erro ao copiar');
+        }
+        document.body.removeChild(textArea);
+    }
+}
+
+
+// Exporta as funções para serem usadas em outros módulos
+export { fetchJSON, createElementFromHTML, copyToClipboard };
