@@ -8,6 +8,52 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- ...conteúdo completo conforme anexo... -->
+
+    <header class="main-header">
+        <div class="container header-container">
+            <a href="/" class="logo" aria-label="Página Inicial">⌂ Encontra Meu CV</a>
+            <nav id="main-nav">
+                <ul>
+                    <li><a href="/">Início</a></li>
+                    <li class="dropdown">
+                        <a href="#" aria-haspopup="true" aria-expanded="false">Jornadas ▾</a>
+                        <ul class="dropdown-menu" id="nav-journeys-list">
+                            <!-- Jornadas carregadas dinamicamente aqui -->
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#" aria-haspopup="true" aria-expanded="false">Sobre Nós ▾</a>
+                        <ul class="dropdown-menu">
+                            <li><a href="pages/sobre.html">Sobre</a></li>
+                            <li><a href="pages/privacidade.html">Políticas de Privacidade</a></li>
+                            <li><a href="pages/termos.html">Termos de Uso</a></li>
+                            <li><a href="pages/transparencia.html">Transparência</a></li>
+                            <li><a href="pages/disclaimer.html">Disclaimer</a></li>
+                            <li><a href="pages/contato.html">Contato</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="app-container" class="container" role="main">
+        <!-- Conteúdo dinâmico da aplicação será renderizado aqui -->
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p>© 2025 Encontra Meu CV. Todos os direitos reservados.</p>
+            <nav>
+                <a href="pages/privacidade.html">Privacidade</a> | 
+                <a href="pages/termos.html">Termos</a> | 
+                <a href="pages/contato.html">Contato</a>
+            </nav>
+        </div>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script src="js/journey-manager.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
