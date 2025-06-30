@@ -1,0 +1,3 @@
+document.addEventListener('DOMContentLoaded', () => {
+    // ...conteúdo completo conforme anexo...
+});

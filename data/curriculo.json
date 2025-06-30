@@ -1,0 +1,23 @@
+{
+  "jornada": {
+    "id": "curriculo",
+    "titulo": "Criação de Currículo",
+    "descricao": "Gere seções otimizadas para o seu currículo.",
+    "versao": "1.0",
+    "pergunta_inicial": "P001"
+  },
+  "perguntas": {
+    "P001": {
+      "id": "P001",
+      "texto": "Qual seu nível de experiência profissional?",
+      "tipo": "multipla_escolha",
+      "obrigatoria": true,
+      "opcoes": [
+        { "id": "A", "texto": "Iniciante (sem experiência ou estagiário)", "trecho_prompt": "Foco em potencial, habilidades acadêmicas e projetos pessoais", "destino": "P002" },
+        { "id": "B", "texto": "Júnior/Pleno (1 a 5 anos de experiência)", "trecho_prompt": "Foco em resultados quantificáveis e responsabilidades assumidas", "destino": "P002" },
+        { "id": "C", "texto": "Sênior/Especialista (mais de 5 anos)", "trecho_prompt": "Foco em liderança, impacto estratégico e mentorias", "destino": "P002" }
+      ]
+    },
+    // ...restante do JSON conforme anexo...
+  }
+}

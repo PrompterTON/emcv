@@ -1,0 +1,22 @@
+{
+  "journeys": [
+    {
+      "id": "curriculo",
+      "title": "Criação de Currículo",
+      "description": "Gere seções otimizadas para o seu currículo, destacando suas habilidades e experiências.",
+      "path": "data/curriculo.json"
+    },
+    {
+      "id": "linkedin",
+      "title": "Otimização de LinkedIn",
+      "description": "Crie textos para o resumo (Sobre) e descrições de experiências para um perfil de destaque no LinkedIn.",
+      "path": "data/linkedin.json"
+    },
+    {
+      "id": "perfilamento",
+      "title": "Análise de Perfil Profissional",
+      "description": "Descubra seus pontos fortes e áreas de desenvolvimento para planejar sua carreira.",
+      "path": "data/perfilamento.json"
+    }
+  ]
+}

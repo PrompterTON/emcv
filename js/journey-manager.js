@@ -1,0 +1,3 @@
+const JourneyManager = (function() {
+    // ...conteúdo completo conforme anexo...
+})();
